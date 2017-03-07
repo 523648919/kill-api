@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd
+       http://www.springframework.org/schema/tx
+	   http://www.springframework.org/schema/tx/spring-tx.xsd
+	   http://www.springframework.org/schema/context
+	   http://www.springframework.org/schema/context/spring-context.xsd
+	   http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+">
+
+    <!-- 开启注解 -->
+    <context:annotation-config />
+    <!-- 注解容器的bean -->
+    <context:component-scan base-package="com.kill">
+        <context:exclude-filter type="annotation"
+                                expression="org.springframework.stereotype.Controller" />
+    </context:component-scan>
+    <!-- 引入jdbc配置文件 -->
+    <context:property-placeholder location="WEB-INF/sys/jdbc.properties"          ignore-unresolvable="true" />
+    <context:property-placeholder location="WEB-INF/sys/bonecp.properties"          ignore-unresolvable="true" />
+   <!--&lt;!&ndash;bonecp数据连接池 &ndash;&gt;-->
+    <bean id="parentDataSource" class="com.jolbox.bonecp.BoneCPDataSource"
+          destroy-method="close">
+        <property name="idleConnectionTestPeriod" value="${idleConnectionTestPeriod}" />
+        <property name="idleMaxAge" value="${idleMaxAge}" />
+        <property name="maxConnectionsPerPartition" value="${maxConnectionsPerPartition}" />
+        <property name="minConnectionsPerPartition" value="${minConnectionsPerPartition}" />
+        <property name="partitionCount" value="${partitionCount}" />
+        <property name="acquireIncrement" value="${acquireIncrement}" />
+        <property name="statementsCacheSize" value="${statementsCacheSize}" />
+        <property name="releaseHelperThreads" value="${releaseHelperThreads}" />
+    </bean>
+    <!--&lt;!&ndash; 默认数据源 &ndash;&gt;-->
+    <bean id="dsSys" parent="parentDataSource">
+        <property name="driverClass" value="${jdbc.driverClassName}" />
+        <property name="jdbcUrl" value="${jdbc.url}" />
+        <property name="username" value="${jdbc.username}" />
+        <property name="password" value="${jdbc.password}" />
+    </bean>
+    <bean id="dataSource"
+          class="org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy">
+        <property name="targetDataSource">
+            <ref bean="dsSys" />
+        </property>
+    </bean>
+    <!--&lt;!&ndash; 创建SqlSessionFactory &ndash;&gt;-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="configLocation" value="WEB-INF/sys/mybatis.cfg.xml" />
+        <property name="dataSource" ref="dataSource" />
+         <!--扫描映射文件目录(扫描映射文件)，一般与pojo放到一个包中，省去了再mybatis.cfg.xml中mapper的配置 -->
+        <property name="mapperLocations">
+            <list>
+                 <value>classpath*:com/kill/domain/*.xml</value>
+            </list>
+        </property>
+        <!--&lt;!&ndash; 全局别名设置，在映射文件中只需写别名，而不必写出整个类路径 &ndash;&gt;-->
+        <property name="typeAliasesPackage"
+                  value="com.kill.dao,
+                       com.kill.domain             "></property>
+    </bean>
+    <!--&lt;!&ndash; 配置映射器 &ndash;&gt;-->
+    <!--&lt;!&ndash; 理解：主要是用来创建dao对象：创建基于JDK接口代理对象 &ndash;&gt;-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.kill.dao" />
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+    </bean>
+
+    <!--&lt;!&ndash; 事务配置 &ndash;&gt;-->
+    <bean name="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+    <bean id="transactionTemplate"
+          class="org.springframework.transaction.support.TransactionTemplate">
+        <property name="transactionManager" ref="transactionManager" />
+        <!--&lt;!&ndash;ISOLATION_DEFAULT 表示由使用的数据库决定 &ndash;&gt;-->
+        <property name="isolationLevelName" value="ISOLATION_DEFAULT" />
+        <property name="propagationBehaviorName" value="PROPAGATION_REQUIRED" />
+        <!--&lt;!&ndash; <property name="timeout" value="30"/> &ndash;&gt;-->
+    </bean>
+    <!--&lt;!&ndash; 注解方式配置事物 &ndash;&gt;-->
+    <tx:annotation-driven transaction-manager="transactionManager" />
+</beans>

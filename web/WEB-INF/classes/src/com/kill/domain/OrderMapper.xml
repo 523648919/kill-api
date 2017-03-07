@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.kill.dao.OrderDao">
+
+	<insert id="insertOrderInfo"  >
+   insert into `order` (seckill_id ,user_phone) values(#{seckillid},#{user_phone})
+	</insert>
+	<!-- 查验是否存在-->
+	<select id="queryByOrderCheck" resultType="Integer">
+		select count(1) from `order` t where t.seckill_id = #{seckillid} and user_phone=#{user_phone}
+	</select>
+
+	<select id="queryList" resultType="Map">
+		select s.* ,o.user_phone,date_format(o.crt_date,'%Y-%m-%d %H:%i:%s') crt_date,o.status from `order` o left join seckill s on o.seckill_id = s.seckill_id
+	</select>
+
+	<select id="queryCjList" resultType="Map">
+		select id,employee_no,employee_name name,mobile,image,center,depart  from  employee where status = '1'
+	</select>
+	<select id="queryEmpoyeeList" resultType="Map" parameterType="Map">
+		select id,employee_no,employee_name name,mobile,image,center,depart,status,date_format(crt_date,'%Y-%m-%d %H:%m:%s') crt_date,remark  from  employee where status = #{status}
+		<if test="employee_name !=null and employee_name !=''">
+			and employee_no =  ${employee_name}
+		</if>
+		order by employee_no asc limit #{start},#{limit}
+	</select>
+	<select id="queryEmpoyeeListCount" resultType="String" >
+		select  count(1) results  from  employee where status = #{status}
+	</select>
+	<update id="updateEmpoyee" parameterType="Map">
+		update employee set status = #{status} <if test="remark !=null and remark!=''">,remark=#{remark}</if> where id=#{id}
+	</update>
+</mapper>

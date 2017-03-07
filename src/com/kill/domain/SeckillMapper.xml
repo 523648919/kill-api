@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.kill.dao.SeckillDao">
+
+    <update id="reduceNumber">
+		update seckill s  set s.number= s.number-1  where seckill_id = #{seckillid}
+		and start_time <![CDATA[ <=]]> #{killTime} and end_time <![CDATA[ >=]]> #{killTime} and `number` > 0
+    </update>
+
+    <select id="querySecKillById" resultType="Map" parameterType="String">
+		select * from seckill where seckill_id = #{seckillid}
+	</select>
+
+    <select id="querySecKillList" resultType="Map">
+		select name,seckill_id,number,DATE_FORMAT(start_time,'%Y%-%m-%d %H:%m:%s') start_date ,start_time,DATE_FORMAT(end_time,'%Y-%m-%d %H:%m:%s')end_time from seckill
+	</select>
+    <select id="querySecKillDetail" resultType="Map">
+		select name,seckill_id,number,DATE_FORMAT(start_time,'%Y%-%m-%d %H:%m:%s') start_date ,DATE_FORMAT(start_time,'%Y%,%m,%d,%H,%m,%s') start_time,DATE_FORMAT(end_time,'%Y-%m-%d %H:%m:%s')end_time from seckill where seckill_id=#{seckillId}
+	</select>
+	<update id="updateKillNumber" >
+		update seckill set number=(number-1)   where seckill_id = #{seckillid}
+	</update>
+</mapper>
